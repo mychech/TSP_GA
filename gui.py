@@ -16,6 +16,7 @@ class GUI:
         self.root = tk.Tk()
         self.root.geometry('850x820')
         self.name2btn = {}
+        self.name2btn_vars = {}
         self.isshow = False
         self.set_gui()
         self.show_text.insert("insert", "Init Model...\n")
@@ -27,10 +28,12 @@ class GUI:
         self.all_pt_names = pt_name
         for i, name in enumerate(pt_name):
             pos_x, pos_y = i % 10 , i // 10 + 1
-            self.name2btn[name] = tk.Checkbutton(self.root, text=name, bd=6, bg='green', width=5)
+            var = tk.IntVar(value=1)
+            self.name2btn[name] = tk.Checkbutton(self.root, text=name, bd=6, bg='green', width=5, variable=var)
             self.name2btn[name].place(x=pos_x*80 + 20, y=pos_y*50 - 20)
+            self.name2btn_vars[name] = var
+            self.name2btn[name].bind("<ButtonRelease-1>", self.CheckBtns)
             # print(pos_x*80 + 20, pos_y*50 - 20)
-            self.name2btn[name].select()
 
         self.label1 = tk.Label(self.root, text='选择起始点:', width=10, height=1)
         self.comb_var = tkinter.StringVar()
@@ -77,6 +80,33 @@ class GUI:
 
         self.ChangeStart(None)
 
+    def CheckBtns(self, event):
+        new_names = []
+        self.root.update()
+        for i in range(len(self.all_pt_names)):
+            name = self.all_pt_names[i]
+            # print(name, self.name2btn_vars[name].get())
+            if self.name2btn[name] == event.widget:
+                if self.name2btn_vars[name].get() == True:
+                    self.name2btn[name].config(bg='gray')
+                else:
+                    self.name2btn[name].config(bg='green')
+                    new_names.append(self.all_pt_names[i])
+            elif self.name2btn_vars[name].get():
+                new_names.append(self.all_pt_names[i])
+                # self.name2btn[name].config(bg='green')
+            else:
+                self.name2btn[name].config(bg='gray')
+
+        self.combox.config(values=tuple(new_names))
+        idx = 0
+        for i, name in enumerate(new_names):
+            if self.name2btn[name]['bg'] == 'yellow':
+                idx = i
+                break
+        self.combox.current(idx)
+        self.name2btn[new_names[idx]].config(bg='yellow')
+
 
     def ShowImg(self):
         img = cv2.resize(cv2.imread('temp.png'), (420, 550), cv2.INTER_CUBIC)
@@ -88,9 +118,9 @@ class GUI:
 
     def ChangeStart(self, event):
         change_name = self.comb_var.get()
-        # print(change_name)
         for name in self.all_pt_names:
-            self.name2btn[name].configure(bg='green')
+            if self.name2btn[name]['bg'] == 'yellow':
+                self.name2btn[name].configure(bg='green')
         self.name2btn[change_name].configure(bg='yellow')
         self.root.mainloop()
 
@@ -103,7 +133,7 @@ class GUI:
             num_iter = int(self.envar1.get())
             mul_rate = float(self.envar3.get())
             st_point = self.comb_var.get()
-            print(num_popu, num_iter, mul_rate, st_point)
+            # print(num_popu, num_iter, mul_rate, st_point)
             self.start_btn.config(state=tk.DISABLED)
 
             self.progress = tk.IntVar()
@@ -144,7 +174,11 @@ class GUI:
 
 
     def StartAlgo(self, num_pou, num_iter, mul_rate, st_point):
-        point_name, point_coordinate = readDate('city.csv')
+        valids = []
+        for k, v in self.name2btn.items():
+            if v['bg'] != 'gray':
+                valids.append(k)
+        point_name, point_coordinate = readDate('city.csv', valids=valids)
         # distance matrix
         point_count = len(point_name)
         Distance = getDistanceMatrix(point_count, point_coordinate)
@@ -176,7 +210,7 @@ class GUI:
         frames = []
         i = 0
         while i <= itter_time:
-            print(i)
+            # print(i)
             # select population to reproduction
             parents = selection(population, origin, Distance)
             # Cross reproduction
@@ -205,8 +239,13 @@ class GUI:
             self.thread_queue.put(i)
             i += 1
         self.show_text.insert("insert", 'Best Travel Route is:\n')
-
-
+        path =  DistanceAndPath[0][1]
+        fmt = '  {:<}\t{:<}\t{:<}\n'
+        self.show_text.insert("insert", fmt.format(st_point, '--->', idx_point_dict[path[0]]))
+        for i in range(len(path) - 1):
+            self.show_text.insert("insert", fmt.format(idx_point_dict[path[i]], '--->',
+                                                                            idx_point_dict[path[i + 1]]))
+        self.show_text.insert("insert", fmt.format(idx_point_dict[path[-1]], '--->', st_point))
         self.show_text.insert("insert", '------     Finish This Run!   ------\n')
         self.start_btn.config(state=tk.NORMAL)
         self.show_btn.config(state=tk.NORMAL)
