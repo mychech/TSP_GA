@@ -1,5 +1,4 @@
 import os
-import glob
 from PIL import Image
 
 files = os.listdir('temp')
