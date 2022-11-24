@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import math
 import random
+from math import radians, sin, cos, asin, sqrt
 
 random.seed(42)
 matplotlib.rcParams['font.family'] = 'Microsoft YaHei'
@@ -15,8 +15,21 @@ def get_origin(start_point, point_idx_dict, select_point):
     return st_idx, select_point_idx
 
 
+
+def haversine_dis(lon1, lat1, lon2, lat2):
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine
+    d_lon = lon2 - lon1
+    d_lat = lat2 - lat1
+    aa = sin(d_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(d_lon / 2) ** 2
+    c = 2 * asin(sqrt(aa))
+    r = 6371  # radius of earth，km
+    return c * r   # km
+
+
 # total distance for signle one
-def get_total_distance(x, origin):
+def get_total_distance(x, origin, Distance):
     dis = 0
     dis += Distance[x[origin]][x[0]]
     for i in range(len(x) - 1):
@@ -37,8 +50,8 @@ def generate_population(totalNum_population, select_point_idx):
 
 
 # Roulette algorithm
-def selection(population, origin):
-    graded = [[get_total_distance(x, origin), x] for x in population]
+def selection(population, origin, Distance):
+    graded = [[get_total_distance(x, origin, Distance), x] for x in population]
     # Calculate fitness
     fit_value = []
     for i in range(len(graded)):
@@ -130,13 +143,13 @@ def mutation(children, mutation_rate=0.1):
 
 
 # distance of population with origin start point
-def get_result(population, origin):
-    graded = [[get_total_distance(x, origin), x] for x in population]
+def get_result(population, origin, Distance):
+    graded = [[get_total_distance(x, origin, Distance), x] for x in population]
     graded = sorted(graded)
     return graded
 
 
-def draw(origin, result_path, distance):
+def draw(origin, result_path, distance, point_coordinate, point_name):
     # scatter
     plt.scatter(point_coordinate[:, 0], point_coordinate[:, 1])
 
@@ -154,7 +167,7 @@ def draw(origin, result_path, distance):
         plt.plot(X, Y, '-')
         plt.text((X[0] + X[1]) / 2, (Y[0] + Y[1]) / 2, i, fontsize='small')
 
-        plt.title("distance = " + str(distance))
+        plt.title("distance = {:.3f}".format(distance))
         del (X[0])
         del (Y[0])
         i += 1
@@ -166,7 +179,7 @@ def draw(origin, result_path, distance):
     plt.scatter(point_coordinate[origin, 0], point_coordinate[origin, 1], s=150)
 
 
-def readDate(filename):
+def readDate(filename, valids=[]):
     # 载入数据
     point_name = []
     point_coordinate = []
@@ -176,34 +189,36 @@ def readDate(filename):
             if i != 0:
                 line = line.split('\n')[0]
                 line = line.split(',')
-                point_name.append(line[0])
-                point_coordinate.append([float(line[1]), float(line[2])])
+                if valids == [] or line[0] in valids:
+                    point_name.append(line[0])
+                    point_coordinate.append([float(line[1]), float(line[2])])
+
     point_coordinate = np.array(point_coordinate)
 
     return point_name, point_coordinate
 
 
-def getDistanceMatrix(point_count):
+def getDistanceMatrix(point_count, point_coordinate):
     Distance = np.zeros([point_count, point_count])
     for i, pt1 in enumerate(point_coordinate):
         for j, pt2 in enumerate(point_coordinate):
-            Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
+            Distance[i][j] = haversine_dis(pt1[0], pt1[1], pt2[0], pt2[1])
     return Distance
 
-if __name__ == '__main__':
 
+def runAlgo(num_populaion, iter_time, mul_rate, st_point):
     point_name, point_coordinate = readDate('city.csv')
 
     # distance matrix
     point_count = len(point_name)
-    Distance = getDistanceMatrix(point_count)
+    Distance = getDistanceMatrix(point_count, point_coordinate)
 
     # NUmber of population
-    totalNum_population = 500
+    totalNum_population = num_populaion
     # Number of evolutions
-    itter_time = 400
+    itter_time = iter_time
     # mutation rate
-    mutation_rate = 0.9
+    mutation_rate = mul_rate
 
     # point2idx idx2point
     point_idx_dict = {name: i for i, name in enumerate(point_name)}
@@ -214,18 +229,18 @@ if __name__ == '__main__':
     select_point = [i for i in point_name]
 
     # start point and select point index
-    origin, select_point_idx = get_origin('长春市', point_idx_dict, select_point)
+    origin, select_point_idx = get_origin(st_point, point_idx_dict, select_point)
 
     # init population
     population = generate_population(totalNum_population, select_point_idx)
-    DistanceAndPath = get_result(population, origin)
+    DistanceAndPath = get_result(population, origin, Distance)
 
     # 开始迭代
     register = []
     i = 0
     while i < itter_time:
         # select population to reproduction
-        parents = selection(population, origin)
+        parents = selection(population, origin, Distance)
         # Cross reproduction
         children = crossover(totalNum_population, parents)
         # mutation
@@ -234,20 +249,21 @@ if __name__ == '__main__':
         population = parents + children
 
         # refresh best solutions
-        DistanceAndPath = get_result(population, origin)
+        DistanceAndPath = get_result(population, origin, Distance)
         register.append(DistanceAndPath[0][0])
 
         if i == 0 or (i + 1) % 50 == 0:
             for j in range(output):
                 result_path = DistanceAndPath[j][1]
                 distance = DistanceAndPath[j][0]
-                plt.figure(figsize=(14, 6))
+                plt.figure(figsize=(12, 5), dpi=200)
                 plt.subplot(1, 2, 1)
-                draw(origin, result_path, distance)
+                draw(origin, result_path, distance, point_coordinate, point_name)
 
                 plt.subplot(1, 2, 2)
                 plt.plot(list(range(len(register))), register)
                 plt.title("最优结果变化趋势")
+                plt.savefig('best.png')
                 plt.show()
         i += 1
 
@@ -255,3 +271,6 @@ if __name__ == '__main__':
     result_path_name.append(idx_point_dict[origin])
     for item in DistanceAndPath[0][1]:
         result_path_name.append(idx_point_dict[item])
+
+if __name__ == '__main__':
+    runAlgo(500, 500, 0.9, '长春市')
