@@ -15,15 +15,12 @@ def get_origin(point_idx_dict, select_point):
 
 # total distance for signle one
 def get_total_distance(x, origin):
-    distance = 0
-    distance += Distance[origin][x[0]]
-    for i in range(len(x)):
-        if i == len(x) - 1:
-            distance += Distance[origin][x[i]]
-            break
-        else:
-            distance += Distance[x[i]][x[i + 1]]
-    return distance
+    dis = 0
+    dis += Distance[origin][x[0]]
+    for i in range(len(x) - 1):
+        dis += Distance[x[i]][x[i + 1]]
+    dis += Distance[origin][x[-1]]
+    return dis
 
 
 # init
