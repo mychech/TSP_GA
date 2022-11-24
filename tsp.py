@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import math
 import random
-
+random.seed(42)
 matplotlib.rcParams['font.family'] = 'Microsoft YaHei'
 
 
@@ -74,17 +74,17 @@ def selection(population, origin):
 
 # Crossover
 def crossover(totalNum_population, parents):
-    # 生成子代的个数,以此保证种群稳定
+    # The number of offspring is generated to ensure that the population number remains unchanged
     child_count = totalNum_population - len(parents)
-    # 孩子列表
     children = []
+
     while len(children) < child_count:
         # select parent
         mother, father = random.sample(parents, 2)
         popu_size = len(mother)
 
         # select cross point
-        left = random.randint(0, len(mother) // 2)
+        left = random.randint(0, len(mother) - 2)
         right = random.randint(left + 1, len(mother) - 1)
 
         gene1 = mother[left:right]
@@ -116,20 +116,19 @@ def crossover(totalNum_population, parents):
     return children
 
 
-# 变异    基因次序片段交换
+# mutation
 def mutation(children, mutation_rate=0.1):
     for i in range(len(children)):
         if random.random() < mutation_rate:
             child = children[i]
             u = random.randint(0, len(child) - 2)
             v = random.randint(u + 1, len(child) - 1)
-
             child_x = child[u + 1:v]
             child_x.reverse()
-            child = child[0:u + 1] + child_x + child[v:]
+            children[i] = child[0:u + 1] + child_x + child[v:]
 
 
-# 得到最佳纯输出结果
+# distance of population with origin start point
 def get_result(population, origin):
     graded = [[get_total_distance(x, origin), x] for x in population]
     graded = sorted(graded)
@@ -195,11 +194,11 @@ if __name__ == '__main__':
             Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
 
     # NUmber of population
-    totalNum_population = 800
+    totalNum_population = 500
     # Number of evolutions
-    itter_time = 300
+    itter_time = 400
     # mutation rate
-    mutation_rate = 0.1
+    mutation_rate = 0.9
 
     # point2idx idx2point
     point_idx_dict = {name: i for i, name in enumerate(point_name)}
@@ -232,6 +231,19 @@ if __name__ == '__main__':
         # refresh best solutions
         DistanceAndPath = get_result(population, origin)
         register.append(DistanceAndPath[0][0])
+
+        if i == 0 or (i + 1) % 50 == 0:
+            for j in range(output):
+                result_path = DistanceAndPath[j][1]
+                distance = DistanceAndPath[j][0]
+                plt.figure(figsize=(12, 6))
+                plt.subplot(1, 2, 1)
+                draw(origin, result_path, distance)
+
+                plt.subplot(1, 2, 2)
+                plt.plot(list(range(len(register))), register)
+                plt.title("最优结果变化趋势")
+                plt.show()
         i += 1
 
     result_path_name = []
@@ -239,14 +251,4 @@ if __name__ == '__main__':
     for item in DistanceAndPath[0][1]:
         result_path_name.append(idx_point_dict[item])
 
-    for j in range(output):
-        result_path = DistanceAndPath[j][1]
-        distance = DistanceAndPath[j][0]
 
-        plt.figure(j + 1)
-        draw(origin, result_path, distance)
-
-        plt.figure(j + 2)
-        plt.plot(list(range(len(register))), register)
-        plt.title("最优结果变化趋势")
-        plt.show()
