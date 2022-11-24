@@ -23,7 +23,7 @@ def get_total_distance(x, origin):
     return dis
 
 
-# init
+# init population
 def generate_population(count, select_point_idx):
     population = []
     for i in range(count):
@@ -148,7 +148,6 @@ def get_result(population, origin):
     return graded
 
 
-# 画图
 def draw(origin, result_path, distance):
     # scatter
     plt.scatter(point_coordinate[:, 0], point_coordinate[:, 1])
@@ -203,16 +202,14 @@ if __name__ == '__main__':
     # distance matrix
     point_count = len(point_name)
     Distance = np.zeros([point_count, point_count])
-    for i in range(point_count):
-        for j in range(point_count):
-            Distance[i][j] = math.sqrt(
-                (point_coordinate[i][0] - point_coordinate[j][0]) ** 2 + (
-                        point_coordinate[i][1] - point_coordinate[j][1]) ** 2)
+    for i, pt1 in enumerate(point_coordinate):
+        for j, pt2 in enumerate(point_coordinate):
+            Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
 
     # 种群数
-    count = 34
+    count = 800
     # 进化次数
-    itter_time = 200
+    itter_time = 300
     # 变异率
     mutation_rate = 0.1
 
