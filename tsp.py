@@ -3,23 +3,25 @@ import matplotlib.pyplot as plt
 import matplotlib
 import math
 import random
+
 random.seed(42)
 matplotlib.rcParams['font.family'] = 'Microsoft YaHei'
 
 
 # get start points
-def get_origin(point_idx_dict, select_point):
-    select_point_idx = [point_idx_dict[select_point[i]] for i in range(1, len(select_point))]
-    return point_idx_dict[select_point[0]], select_point_idx
+def get_origin(start_point, point_idx_dict, select_point):
+    st_idx = point_idx_dict[start_point]
+    select_point_idx = [point_idx_dict[select_point[i]] for i in range(len(select_point)) if i != st_idx]
+    return st_idx, select_point_idx
 
 
 # total distance for signle one
 def get_total_distance(x, origin):
     dis = 0
-    dis += Distance[origin][x[0]]
+    dis += Distance[x[origin]][x[0]]
     for i in range(len(x) - 1):
         dis += Distance[x[i]][x[i + 1]]
-    dis += Distance[origin][x[-1]]
+    dis += Distance[x[-1]][x[origin]]
     return dis
 
 
@@ -51,7 +53,6 @@ def selection(population, origin):
     for i in range(len(newfit_value)):
         t += newfit_value[i]
         newfit_value[i] = t
-
 
     # roulette wheel selection
     ms = [random.random() for _ in range(len(population))]
@@ -182,16 +183,20 @@ def readDate(filename):
     return point_name, point_coordinate
 
 
+def getDistanceMatrix(point_count):
+    Distance = np.zeros([point_count, point_count])
+    for i, pt1 in enumerate(point_coordinate):
+        for j, pt2 in enumerate(point_coordinate):
+            Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
+    return Distance
+
 if __name__ == '__main__':
 
     point_name, point_coordinate = readDate('city.csv')
 
     # distance matrix
     point_count = len(point_name)
-    Distance = np.zeros([point_count, point_count])
-    for i, pt1 in enumerate(point_coordinate):
-        for j, pt2 in enumerate(point_coordinate):
-            Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
+    Distance = getDistanceMatrix(point_count)
 
     # NUmber of population
     totalNum_population = 500
@@ -209,7 +214,7 @@ if __name__ == '__main__':
     select_point = [i for i in point_name]
 
     # start point and select point index
-    origin, select_point_idx = get_origin(point_idx_dict, select_point)
+    origin, select_point_idx = get_origin('长春市', point_idx_dict, select_point)
 
     # init population
     population = generate_population(totalNum_population, select_point_idx)
@@ -236,7 +241,7 @@ if __name__ == '__main__':
             for j in range(output):
                 result_path = DistanceAndPath[j][1]
                 distance = DistanceAndPath[j][0]
-                plt.figure(figsize=(12, 6))
+                plt.figure(figsize=(14, 6))
                 plt.subplot(1, 2, 1)
                 draw(origin, result_path, distance)
 
@@ -250,5 +255,3 @@ if __name__ == '__main__':
     result_path_name.append(idx_point_dict[origin])
     for item in DistanceAndPath[0][1]:
         result_path_name.append(idx_point_dict[item])
-
-
