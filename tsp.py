@@ -34,46 +34,38 @@ def generate_population(count, select_point_idx):
     return population
 
 
-# 自然选择    轮盘赌算法
+# Roulette algorithm
 def selection(population, origin):
     graded = [[get_total_distance(x, origin), x] for x in population]
-    # 计算适应度
-    fit_value = []  # 存储每个个体的适应度
+    # Calculate fitness
+    fit_value = []
     for i in range(len(graded)):
         fit_value.append(1 / graded[i][0] ** 15)
-    # 适应度总和
-    total_fit = 0
-    for i in range(len(fit_value)):
-        total_fit += fit_value[i]
+    total_fit = sum(fit_value)
 
-    # 计算每个适应度占适应度总和的比例
-    newfit_value = []  # 储存每个个体轮盘选择的概率
-    for i in range(len(fit_value)):
-        newfit_value.append(fit_value[i] / total_fit)
+    # Calculate the proportion of each fitness to the total fitness
+    newfit_value = [single_fit / total_fit for single_fit in fit_value]
 
-    # 计算累计概率
+    # Calculate cumulative probability
     t = 0
     for i in range(len(newfit_value)):
-        t = t + newfit_value[i]
+        t += newfit_value[i]
         newfit_value[i] = t
 
-    # 生成随机数序列用于选择和比较
-    ms = []  # 随机数序列
-    for i in range(len(population)):
-        ms.append(random.random())
-    ms.sort()
 
-    # 轮盘赌选择法
+    # roulette wheel selection
+    ms = [random.random() for _ in range(len(population))]
+    ms.sort()
     i = 0
     j = 0
     parents = []
     while i < len(population):
-        # 选择--累积概率大于随机概率
+        # Choice - cumulative probability is greater than random probability
         if (ms[i] < newfit_value[j]):
             if population[j] not in parents:
                 parents.append(population[j])
             i = i + 1
-        # 不选择--累积概率小于随机概率
+        # No - cumulative probability is less than random probability
         else:
             j = j + 1
 
@@ -129,7 +121,7 @@ def crossover(parents):
 
 
 # 变异    基因次序片段交换
-def mutation(children):
+def mutation(children, mutation_rate=0.1):
     for i in range(len(children)):
         if random.random() < mutation_rate:
             child = children[i]
@@ -206,18 +198,18 @@ if __name__ == '__main__':
         for j, pt2 in enumerate(point_coordinate):
             Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
 
-    # 种群数
+    # NUmber of population
     count = 800
-    # 进化次数
+    # Number of evolutions
     itter_time = 300
-    # 变异率
+    # mutation rate
     mutation_rate = 0.1
 
     # point2idx idx2point
     point_idx_dict = {name: i for i, name in enumerate(point_name)}
     idx_point_dict = {i: name for i, name in enumerate(point_name)}
 
-    # 获得输出方案个数
+    # num of output
     output = 1
     select_point = [i for i in point_name]
 
@@ -232,16 +224,16 @@ if __name__ == '__main__':
     register = []
     i = 0
     while i < itter_time:
-        # 选择繁殖个体群
+        # select population to reproduction
         parents = selection(population, origin)
-        # 交叉繁殖
+        # Cross reproduction
         children = crossover(parents)
-        # 变异操作
-        mutation(children)
-        # 更新种群
+        # mutation
+        mutation(children, mutation_rate)
+        # refresh population
         population = parents + children
-        # 更新最优解
 
+        # refresh best solutions
         DistanceAndPath = get_result(population, origin)
         register.append(DistanceAndPath[0][0])
         i += 1
