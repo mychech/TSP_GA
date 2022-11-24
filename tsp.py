@@ -6,6 +6,7 @@ import random
 
 matplotlib.rcParams['font.family'] = 'Microsoft YaHei'
 
+
 # get start points
 def get_origin(point_idx_dict, select_point):
     select_point_idx = [point_idx_dict[select_point[i]] for i in range(1, len(select_point))]
@@ -26,7 +27,7 @@ def get_total_distance(x, origin):
 
 
 # init
-def generate_population(select_point_idx):
+def generate_population(count, select_point_idx):
     population = []
     for i in range(count):
         # 随机生成个体
@@ -197,38 +198,40 @@ def readDate(filename):
 
     return point_name, point_coordinate
 
+
 if __name__ == '__main__':
 
     point_name, point_coordinate = readDate('city.csv')
 
-    # 两两地点之间的距离矩阵
+    # distance matrix
     point_count = len(point_name)
     Distance = np.zeros([point_count, point_count])
     for i in range(point_count):
         for j in range(point_count):
             Distance[i][j] = math.sqrt(
                 (point_coordinate[i][0] - point_coordinate[j][0]) ** 2 + (
-                            point_coordinate[i][1] - point_coordinate[j][1]) ** 2)
+                        point_coordinate[i][1] - point_coordinate[j][1]) ** 2)
 
     # 种群数
-    count = 200
+    count = 34
     # 进化次数
-    itter_time = 600
+    itter_time = 200
     # 变异率
     mutation_rate = 0.1
 
     # point2idx idx2point
-    point_idx_dict = {name:i for i, name in enumerate(point_name)}
-    idx_point_dict = {i:name for i, name in enumerate(point_name)}
+    point_idx_dict = {name: i for i, name in enumerate(point_name)}
+    idx_point_dict = {i: name for i, name in enumerate(point_name)}
 
     # 获得输出方案个数
     output = 1
     select_point = [i for i in point_name]
 
-    # 起点及地点对应整数编码
+    # start point and select point index
     origin, select_point_idx = get_origin(point_idx_dict, select_point)
-    # 初始化种群
-    population = generate_population(select_point_idx)
+
+    # init population
+    population = generate_population(count, select_point_idx)
     DistanceAndPath = get_result(population, origin)
 
     # 开始迭代
@@ -265,4 +268,3 @@ if __name__ == '__main__':
         plt.plot(list(range(len(register))), register)
         plt.title("最优结果变化趋势")
         plt.show()
-
