@@ -24,9 +24,9 @@ def get_total_distance(x, origin):
 
 
 # init population
-def generate_population(count, select_point_idx):
+def generate_population(totalNum_population, select_point_idx):
     population = []
-    for i in range(count):
+    for i in range(totalNum_population):
         # 随机生成个体
         x = select_point_idx.copy()
         random.shuffle(x)  # 随机排序
@@ -72,50 +72,46 @@ def selection(population, origin):
     return parents
 
 
-# 交叉繁殖
-def crossover(parents):
+# Crossover
+def crossover(totalNum_population, parents):
     # 生成子代的个数,以此保证种群稳定
-    child_count = count - len(parents)
+    child_count = totalNum_population - len(parents)
     # 孩子列表
     children = []
     while len(children) < child_count:
-        # 随机选择父母
-        mother_idx = random.randint(0, len(parents) - 1)
-        father_idx = random.randint(0, len(parents) - 1)
-        if mother_idx != father_idx:
-            mother = parents[mother_idx]
-            father = parents[father_idx]
+        # select parent
+        mother, father = random.sample(parents, 2)
+        popu_size = len(mother)
 
-            # 随机选择交叉点
-            left = random.randint(0, len(mother) - 2)
-            right = random.randint(left + 1, len(mother) - 1)
+        # select cross point
+        left = random.randint(0, len(mother) // 2)
+        right = random.randint(left + 1, len(mother) - 1)
 
-            # 交叉片段
-            gene1 = mother[left:right]
-            gene2 = father[left:right]
+        gene1 = mother[left:right]
+        gene2 = father[left:right]
 
-            child1_c = mother[right:] + mother[:right]
-            child2_c = father[right:] + father[:right]
-            child1 = child1_c.copy()
-            child2 = child2_c.copy()
+        # reverse
+        c1_tmp = mother[right:] + mother[:right]
+        c2_tmp = father[right:] + father[:right]
+        child1 = c1_tmp.copy()
+        child2 = c2_tmp.copy()
 
-            for o in gene2:
-                child1_c.remove(o)
+        # del duplicate gene
+        for o in gene2: c1_tmp.remove(o)
 
-            for o in gene1:
-                child2_c.remove(o)
+        for o in gene1: c2_tmp.remove(o)
 
-            child1[left:right] = gene2
-            child2[left:right] = gene1
+        child1[left:right] = gene2
+        child2[left:right] = gene1
 
-            child1[right:] = child1_c[0:len(child1) - right]
-            child1[:left] = child1_c[len(child1) - right:]
+        child1[right:] = c1_tmp[0:popu_size - right]
+        child1[:left] = c1_tmp[popu_size - right:]
 
-            child2[right:] = child2_c[0:len(child1) - right]
-            child2[:left] = child2_c[len(child1) - right:]
+        child2[right:] = c2_tmp[0:popu_size - right]
+        child2[:left] = c2_tmp[popu_size - right:]
 
-            children.append(child1)
-            children.append(child2)
+        children.append(child1)
+        children.append(child2)
 
     return children
 
@@ -199,7 +195,7 @@ if __name__ == '__main__':
             Distance[i][j] = np.sqrt((pt1[0] - pt2[0]) ** 2 + (pt1[1] - pt2[1]) ** 2)
 
     # NUmber of population
-    count = 800
+    totalNum_population = 800
     # Number of evolutions
     itter_time = 300
     # mutation rate
@@ -217,7 +213,7 @@ if __name__ == '__main__':
     origin, select_point_idx = get_origin(point_idx_dict, select_point)
 
     # init population
-    population = generate_population(count, select_point_idx)
+    population = generate_population(totalNum_population, select_point_idx)
     DistanceAndPath = get_result(population, origin)
 
     # 开始迭代
@@ -227,7 +223,7 @@ if __name__ == '__main__':
         # select population to reproduction
         parents = selection(population, origin)
         # Cross reproduction
-        children = crossover(parents)
+        children = crossover(totalNum_population, parents)
         # mutation
         mutation(children, mutation_rate)
         # refresh population
