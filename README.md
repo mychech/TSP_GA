@@ -1,6 +1,7 @@
 # TSP with Genetic Algorithm
 使用遗传算法求解34个省会之间的TSP问题
-<div align=center>![demo](temp.gif)
+
+<img src="temp.gif" align='center' />
 
 
 ##  算法介绍
