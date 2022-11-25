@@ -1,5 +1,5 @@
 # TSP with Genetic Algorithm
-使用遗传算法求解34个省会之间的TSP问题
+使用遗传算法求解34个省会之间的TSP(旅行商)问题
 
 ![demo](temp.gif)
 
