@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 import tkinter.ttk
 from tsp import readDate, getDistanceMatrix, generate_population, get_origin, get_result, \
@@ -17,7 +18,6 @@ class GUI:
         self.isshow = False
         self.all_pt_names = []
         self.set_gui()
-        self.show_text.insert("insert", "Init Model...\n")
         self.root.mainloop()
 
     def set_gui(self):
@@ -51,12 +51,17 @@ class GUI:
         self.entr3 = tk.Entry(self.root, textvariable=self.envar3)
 
         self.show_text = tk.Text(self.root, width=50, height=20)
+        self.scrollbar = tk.Scrollbar(self.root, orient=tk.VERTICAL)
+        print('height' in dir(self.scrollbar))
+        self.show_text.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.show_text.yview)
 
         self.start_btn = tk.Button(self.root, text='Start', width=10, height=2, font=('', 15, 'bold'),
                                    command=self.RunAlgo)
 
         self.show_btn = tk.Button(self.root, text='Best', width=10, height=2, font=('', 15, 'bold'),
                                   command=self.ShowImg)
+
 
         self.label1.place(x=20, y=240)
         self.label2.place(x=20, y=290)
@@ -66,7 +71,8 @@ class GUI:
         self.entr2.place(x=120, y=340)
         self.entr3.place(x=120, y=390)
         self.combox.place(x=100, y=240)
-        self.show_text.place(x=30, y=450)
+        self.show_text.place(x=20, y=450)
+        self.scrollbar.place(x=363, y=450, height=270, width=20)
         self.start_btn.place(x=40, y=750)
         self.show_btn.place(x=150, y=750)
         self.show_btn.config(state=tk.DISABLED)
@@ -119,7 +125,7 @@ class GUI:
         self.root.mainloop()
 
     def RunAlgo(self):
-        self.show_text.insert("insert", '------------     Start This Run!   ------------\n')
+        self.RefreshLog('------------     Start This Run!   ------------\n')
         try:
             num_popu = int(self.envar2.get())
             num_iter = int(self.envar1.get())
@@ -160,6 +166,10 @@ class GUI:
         finally:
             if self.progress.get() < self.progressbar['maximum']:
                 self.root.after(30, self.listen_for_result)
+
+    def RefreshLog(self, msg):
+        self.show_text.insert('insert', msg)
+        self.show_text.see("end")
 
     def StartAlgo(self, num_pou, num_iter, mul_rate, st_point):
         valids = []
@@ -213,37 +223,38 @@ class GUI:
             DistanceAndPath = get_result(population, origin, Distance)
             register.append(DistanceAndPath[0][0])
 
-            if i == 0 or (i + 1) % 20 == 0:
-                self.Plot(DistanceAndPath, point_name, point_coordinate, origin, register)
+            if i == 0 or (i + 1) % 10 == 0:
+                self.Plot(DistanceAndPath, point_name, point_coordinate, origin, register, -1)  # not save temp results
+                # self.Plot(DistanceAndPath, point_name, point_coordinate, origin, register, i + 1)
                 img = cv2.resize(cv2.imread('temp.png'), (420, 550), cv2.INTER_CUBIC)
                 cv2.imwrite('temp.png', img)
                 photo = tk.PhotoImage(file='temp.png')
                 self.show_temp.config(image=photo)
                 self.show_temp.update()
 
-                self.show_text.insert("insert", "[{}/{}]({}) Min Distance is :{:.2f}\n".format(i + 1, itter_time,
-                                                                                               st_point,
-                                                                                               DistanceAndPath[0][0]))
+                self.RefreshLog("[{}/{}]({}) Min Distance is :{:.2f}\n".format(i + 1, itter_time,
+                                                                                st_point,
+                                                                                DistanceAndPath[0][0]))
                 best_route = DistanceAndPath[0][1] if DistanceAndPath[0][0] < best_distance else best_route
                 best_distance = min(best_distance, DistanceAndPath[0][0])
             self.thread_queue.put(i)
             i += 1
-        self.show_text.insert("insert", 'Best Travel Route is:\n')
+        self.RefreshLog('Best Travel Route is:\n')
         path = best_route
         fmt = '\t{:<}\t\t{:<}\t{:<}\n'
-        self.show_text.insert("insert", fmt.format(st_point, '--->', idx_point_dict[path[0]]))
+        self.RefreshLog(fmt.format(st_point, '--->', idx_point_dict[path[0]]))
         for i in range(len(path) - 1):
-            self.show_text.insert("insert", fmt.format(idx_point_dict[path[i]], '--->',
+            self.RefreshLog(fmt.format(idx_point_dict[path[i]], '--->',
                                                        idx_point_dict[path[i + 1]]))
-        self.show_text.insert("insert", fmt.format(idx_point_dict[path[-1]], '--->', st_point))
-        self.show_text.insert("insert", '\n------------     Finish This Run!   ------------\n\n')
+        self.RefreshLog(fmt.format(idx_point_dict[path[-1]], '--->', st_point))
+        self.RefreshLog('\n------------     Finish This Run!   ------------\n\n')
         self.start_btn.config(state=tk.NORMAL)
         self.show_btn.config(state=tk.NORMAL)
 
-    def Plot(self, DistanceAndPath, point_name, point_coordinate, origin, register):
+    def Plot(self, DistanceAndPath, point_name, point_coordinate, origin, register, i=-1):
         result_path = DistanceAndPath[0][1]
         distance = DistanceAndPath[0][0]
-        plt.figure(figsize=(6, 12), dpi=200)
+        plt.figure(figsize=(6, 12), dpi=100)
 
         plt.subplot(2, 1, 1)
         draw(origin, result_path, distance, point_coordinate, point_name)
@@ -251,6 +262,9 @@ class GUI:
         plt.subplot(2, 1, 2)
         plt.plot(list(range(len(register))), register)
         plt.title("距离随迭代次数变化的曲线")
+        if i != -1:
+            if not os.path.isdir('temp'): os.makedirs('temp')
+            plt.savefig(f'temp/temp_{i}.png', bbox_inches='tight')
         plt.savefig(f'temp.png', bbox_inches='tight')
         plt.savefig(f'best.png', bbox_inches='tight')
 
