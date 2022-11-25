@@ -119,7 +119,7 @@ class GUI:
         self.root.mainloop()
 
     def RunAlgo(self):
-        self.show_text.insert("insert", '------     Start This Run!   ------\n')
+        self.show_text.insert("insert", '------------     Start This Run!   ------------\n')
         try:
             num_popu = int(self.envar2.get())
             num_iter = int(self.envar1.get())
@@ -146,7 +146,7 @@ class GUI:
 
             # schedule a time-task to check UI
             # it's in main thread, because it's called by self.root
-            self.root.after(50, self.listen_for_result)
+            self.root.after(30, self.listen_for_result)
         except:
             tkinter.messagebox.showinfo('Error', '参数出错/未找到相关数据文件！')
 
@@ -159,7 +159,7 @@ class GUI:
             pass
         finally:
             if self.progress.get() < self.progressbar['maximum']:
-                self.root.after(50, self.listen_for_result)
+                self.root.after(30, self.listen_for_result)
 
     def StartAlgo(self, num_pou, num_iter, mul_rate, st_point):
         valids = []
@@ -196,6 +196,8 @@ class GUI:
         # 开始迭代
         register = []
         i = 0
+        best_route = []
+        best_distance = float('inf')
         while i <= itter_time:
             # print(i)
             # select population to reproduction
@@ -222,17 +224,19 @@ class GUI:
                 self.show_text.insert("insert", "[{}/{}]({}) Min Distance is :{:.2f}\n".format(i + 1, itter_time,
                                                                                                st_point,
                                                                                                DistanceAndPath[0][0]))
+                best_route = DistanceAndPath[0][1] if DistanceAndPath[0][0] < best_distance else best_route
+                best_distance = min(best_distance, DistanceAndPath[0][0])
             self.thread_queue.put(i)
             i += 1
         self.show_text.insert("insert", 'Best Travel Route is:\n')
-        path = DistanceAndPath[0][1]
-        fmt = '  {:<}\t{:<}\t{:<}\n'
+        path = best_route
+        fmt = '\t{:<}\t{:<}\t{:<}\n'
         self.show_text.insert("insert", fmt.format(st_point, '--->', idx_point_dict[path[0]]))
         for i in range(len(path) - 1):
             self.show_text.insert("insert", fmt.format(idx_point_dict[path[i]], '--->',
                                                        idx_point_dict[path[i + 1]]))
         self.show_text.insert("insert", fmt.format(idx_point_dict[path[-1]], '--->', st_point))
-        self.show_text.insert("insert", '------     Finish This Run!   ------\n')
+        self.show_text.insert("insert", '\n------------     Finish This Run!   ------------\n\n')
         self.start_btn.config(state=tk.NORMAL)
         self.show_btn.config(state=tk.NORMAL)
 
