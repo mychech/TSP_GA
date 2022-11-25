@@ -28,6 +28,9 @@ def haversine_dis(lon1, lat1, lon2, lat2):
     return c * r   # km
 
 
+def Eu_dis(pt1, pt2):
+    return np.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)
+
 # total distance for signle one
 def get_total_distance(x, origin, Distance):
     dis = 0
@@ -202,7 +205,7 @@ def getDistanceMatrix(point_count, point_coordinate):
     Distance = np.zeros([point_count, point_count])
     for i, pt1 in enumerate(point_coordinate):
         for j, pt2 in enumerate(point_coordinate):
-            Distance[i][j] = haversine_dis(pt1[0], pt1[1], pt2[0], pt2[1])
+            Distance[i][j] = Eu_dis(pt1, pt2)
     return Distance
 
 
