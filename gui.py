@@ -230,7 +230,7 @@ class GUI:
             i += 1
         self.show_text.insert("insert", 'Best Travel Route is:\n')
         path = best_route
-        fmt = '\t{:<}\t{:<}\t{:<}\n'
+        fmt = '\t{:<}\t\t{:<}\t{:<}\n'
         self.show_text.insert("insert", fmt.format(st_point, '--->', idx_point_dict[path[0]]))
         for i in range(len(path) - 1):
             self.show_text.insert("insert", fmt.format(idx_point_dict[path[i]], '--->',
