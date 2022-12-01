@@ -5,7 +5,7 @@
 @File ：client.py
 @IDE ：PyCharm
 """
-import os
+
 import time
 import tkinter as tk
 import tkinter.messagebox
